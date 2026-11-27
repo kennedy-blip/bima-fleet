@@ -5,5 +5,6 @@ if ! command -v flutter >/dev/null 2>&1; then
   export PATH="$HOME/flutter/bin:$PATH"
 fi
 flutter config --enable-web
+flutter create --platforms=web --project-name bima_fleet .
 flutter pub get
 flutter build web --release --base-href /

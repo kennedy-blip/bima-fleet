@@ -5,6 +5,7 @@ Offline-first vehicle compliance, renewal and preventive service ledger built wi
 ## Quick start
 
 ```bash
+flutter create --platforms=web,android --project-name bima_fleet .
 flutter pub get
 flutter run
 ```

@@ -161,7 +161,35 @@ class SettingsScreen extends StatelessWidget {
   ]);
 }
 
-Widget _hero(BuildContext context,String title,String sub)=>Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(borderRadius:BorderRadius.circular(24),gradient:LinearGradient(colors:[Theme.of(context).colorScheme.primary.withValues(alpha:.25),Theme.of(context).colorScheme.secondary.withValues(alpha:.08)]),border:Border.all(color:Theme.of(context).colorScheme.primary.withValues(alpha:.2))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight:FontWeight.w900)),const SizedBox(height:8),Text(sub,style:TextStyle(color:Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha:.75))),const SizedBox(height:14),Row(children:[const Icon(Icons.wifi_off,size:15),const SizedBox(width:6),const Text('OFFLINE-READY LOCAL LEDGER',style:TextStyle(fontSize:10,letterSpacing:1.2,fontWeight:FontWeight.bold))])]);)
+Widget _hero(BuildContext context, String title, String sub) {
+  return Container(
+    padding: const EdgeInsets.all(22),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(24),
+      gradient: LinearGradient(colors: [
+        Theme.of(context).colorScheme.primary.withValues(alpha: .25),
+        Theme.of(context).colorScheme.secondary.withValues(alpha: .08),
+      ]),
+      border: Border.all(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: .2),
+      ),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        Text(sub, style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: .75))),
+        const SizedBox(height: 14),
+        Row(children: [
+          const Icon(Icons.wifi_off, size: 15),
+          const SizedBox(width: 6),
+          const Text('OFFLINE-READY LOCAL LEDGER', style: TextStyle(fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+        ]),
+      ],
+    ),
+  );
+}
 Widget _metric(BuildContext context,String label,String value,IconData icon,{bool danger=false,bool warning=false})=>AppTheme.glass(padding:const EdgeInsets.all(13),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Icon(icon,size:18,color:danger?Colors.red:warning?Colors.orange:Theme.of(context).colorScheme.primary),const SizedBox(height:10),Text(value,style:Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight:FontWeight.w900)),Text(label,style:const TextStyle(fontSize:9,letterSpacing:.8,fontWeight:FontWeight.bold),maxLines:1,overflow:TextOverflow.ellipsis)]));
 Widget _sectionTitle(String title,{Widget? trailing})=>Padding(padding:const EdgeInsets.only(bottom:10),child:Row(children:[Expanded(child:Text(title,style:const TextStyle(fontSize:17,fontWeight:FontWeight.w800))),if(trailing!=null)trailing]));
 Widget _empty(BuildContext context,String title,String sub,IconData icon)=>AppTheme.glass(child:Column(children:[Icon(icon,size:34,color:Theme.of(context).colorScheme.primary),const SizedBox(height:10),Text(title,style:const TextStyle(fontWeight:FontWeight.bold)),const SizedBox(height:5),Text(sub,textAlign:TextAlign.center,style:const TextStyle(color:Colors.grey))]));
@@ -173,33 +201,160 @@ Widget _vehicleCard(BuildContext context,FleetController c,FleetVehicle v)=>Card
 ]));
 Widget _expiryLine(String label,FleetVehicle v,DateTime d,FleetController c)=>Padding(padding:const EdgeInsets.symmetric(vertical:6),child:Row(children:[Expanded(child:Text('$label · ${dateText(d)}')),Text('${v.daysUntil(d)}d',style:const TextStyle(fontWeight:FontWeight.bold)),const SizedBox(width:8),_statusChip(v,d,c)]));
 Widget _maintenanceCard(BuildContext context,FleetController c,FleetVehicle v){final checks=[('Oil',v.lastOilAt,v.oilInterval),('Tyres',v.lastTyreAt,v.tyreInterval),('Brakes',v.lastBrakeAt,v.brakeInterval)];return Card(child:Padding(padding:const EdgeInsets.all(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('${v.plate} · ${v.model}',style:const TextStyle(fontWeight:FontWeight.w800)),Text('Current: ${v.odometer} km',style:const TextStyle(color:Colors.grey)),const SizedBox(height:10),...checks.map((x){final due=x.$1=='Oil'?v.odometer-(x.$2+x.$3):v.odometer-(x.$2+x.$3);final isDue=x.$2==0||due>=0;return Padding(padding:const EdgeInsets.symmetric(vertical:4),child:Row(children:[Expanded(child:Text('${x.$1} service')),Text(x.$2==0?'Not logged':'${max(0,x.$2+x.$3-v.odometer)} km remaining',style:TextStyle(color:isDue?Colors.orange:Colors.green,fontWeight:FontWeight.bold,fontSize:12))]));}),if(!c.manager)Align(alignment:Alignment.centerRight,child:TextButton(onPressed:()=>_odometerDialog(context,c,v),child:const Text('Update odometer')))])));}
-Future<void> _vehicleDialog(BuildContext context,FleetController c,{FleetVehicle? existing})async{
-  final plate=TextEditingController(text:existing?.plate??''),model=TextEditingController(text:existing?.model??''),driver=TextEditingController(text:existing?.driver??'');
-  DateTime insurance=existing?.insuranceExpiry??DateTime.now().add(const Duration(days:365)),inspection=existing?.inspectionExpiry??DateTime.now().add(const Duration(days:180)),license=existing?.licenseExpiry??DateTime.now().add(const Duration(days:365));
-  Future<DateTime?> pick(DateTime d) => showDatePicker(context:context,initialDate:d,firstDate:DateTime(2020),lastDate:DateTime(2045));
-  await showDialog(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,set)=>AlertDialog(title:Text(existing==null?'Register vehicle':'Edit vehicle'),content:SizedBox(width:420,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    TextField(controller:plate,decoration:const InputDecoration(labelText:'Registration / plate number')),
-    TextField(controller:model,decoration:const InputDecoration(labelText:'Vehicle make & model')),
-    TextField(controller:driver,decoration:const InputDecoration(labelText:'Assigned driver')),
-    const SizedBox(height:10),
-    ListTile(contentPadding:EdgeInsets.zero,title:const Text('Insurance expiry'),subtitle:Text(dateText(insurance)),trailing:const Icon(Icons.calendar_month),onTap:()async{final d=await pick(insurance);if(d!=null)set(()=>insurance=d);}),
-    ListTile(contentPadding:EdgeInsets.zero,title:const Text('Inspection expiry'),subtitle:Text(dateText(inspection)),trailing:const Icon(Icons.calendar_month),onTap:()async{final d=await pick(inspection);if(d!=null)set(()=>inspection=d);}),
-    ListTile(contentPadding:EdgeInsets.zero,title:const Text('Vehicle licence expiry'),subtitle:Text(dateText(license)),trailing:const Icon(Icons.calendar_month),onTap:()async{final d=await pick(license);if(d!=null)set(()=>license=d);}),
-  ]))),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('Cancel')),FilledButton(onPressed:()async{if(plate.text.trim().isEmpty||model.text.trim().isEmpty){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Plate and model are required.')));return;}final v=FleetVehicle(id:existing?.id??uid(),plate:plate.text.trim().toUpperCase(),model:model.text.trim(),driver:driver.text.trim().isEmpty?'Unassigned':driver.text.trim(),insuranceExpiry:insurance,inspectionExpiry:inspection,licenseExpiry:license,odometer:existing?.odometer??0,oilInterval:existing?.oilInterval??5000,tyreInterval:existing?.tyreInterval??40000,brakeInterval:existing?.brakeInterval??20000,lastOilAt:existing?.lastOilAt??0,lastTyreAt:existing?.lastTyreAt??0,lastBrakeAt:existing?.lastBrakeAt??0);if(existing==null)await c.addVehicle(v);else await c.updateVehicle(v);if(ctx.mounted)Navigator.pop(ctx);},child:const Text('Save vehicle'))]})));)
+Future<void> _vehicleDialog(BuildContext context, FleetController c, {FleetVehicle? existing}) async {
+  final plate = TextEditingController(text: existing?.plate ?? '');
+  final model = TextEditingController(text: existing?.model ?? '');
+  final driver = TextEditingController(text: existing?.driver ?? '');
+  DateTime insurance = existing?.insuranceExpiry ?? DateTime.now().add(const Duration(days: 365));
+  DateTime inspection = existing?.inspectionExpiry ?? DateTime.now().add(const Duration(days: 180));
+  DateTime license = existing?.licenseExpiry ?? DateTime.now().add(const Duration(days: 365));
+
+  Future<DateTime?> pick(DateTime value) => showDatePicker(
+    context: context,
+    initialDate: value,
+    firstDate: DateTime(2020),
+    lastDate: DateTime(2045),
+  );
+
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setDialogState) => AlertDialog(
+        title: Text(existing == null ? 'Register vehicle' : 'Edit vehicle'),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: plate, decoration: const InputDecoration(labelText: 'Registration / plate number')),
+                TextField(controller: model, decoration: const InputDecoration(labelText: 'Vehicle make & model')),
+                TextField(controller: driver, decoration: const InputDecoration(labelText: 'Assigned driver')),
+                const SizedBox(height: 10),
+                ListTile(contentPadding: EdgeInsets.zero, title: const Text('Insurance expiry'), subtitle: Text(dateText(insurance)), trailing: const Icon(Icons.calendar_month), onTap: () async { final value = await pick(insurance); if (value != null) setDialogState(() => insurance = value); }),
+                ListTile(contentPadding: EdgeInsets.zero, title: const Text('Inspection expiry'), subtitle: Text(dateText(inspection)), trailing: const Icon(Icons.calendar_month), onTap: () async { final value = await pick(inspection); if (value != null) setDialogState(() => inspection = value); }),
+                ListTile(contentPadding: EdgeInsets.zero, title: const Text('Vehicle licence expiry'), subtitle: Text(dateText(license)), trailing: const Icon(Icons.calendar_month), onTap: () async { final value = await pick(license); if (value != null) setDialogState(() => license = value); }),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () async {
+              if (plate.text.trim().isEmpty || model.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plate and model are required.')));
+                return;
+              }
+              final vehicle = FleetVehicle(
+                id: existing?.id ?? uid(),
+                plate: plate.text.trim().toUpperCase(),
+                model: model.text.trim(),
+                driver: driver.text.trim().isEmpty ? 'Unassigned' : driver.text.trim(),
+                insuranceExpiry: insurance,
+                inspectionExpiry: inspection,
+                licenseExpiry: license,
+                odometer: existing?.odometer ?? 0,
+                oilInterval: existing?.oilInterval ?? 5000,
+                tyreInterval: existing?.tyreInterval ?? 40000,
+                brakeInterval: existing?.brakeInterval ?? 20000,
+                lastOilAt: existing?.lastOilAt ?? 0,
+                lastTyreAt: existing?.lastTyreAt ?? 0,
+                lastBrakeAt: existing?.lastBrakeAt ?? 0,
+              );
+              if (existing == null) {
+                await c.addVehicle(vehicle);
+              } else {
+                await c.updateVehicle(vehicle);
+              }
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+            },
+            child: const Text('Save vehicle'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 Future<void> _odometerDialog(BuildContext context,FleetController c,FleetVehicle v)async{
   final ctl=TextEditingController(text:'${v.odometer}');
   await showDialog(context:context,builder:(ctx)=>AlertDialog(title:Text('Update ${v.plate} odometer'),content:TextField(controller:ctl,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'Current kilometres')),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('Cancel')),FilledButton(onPressed:()async{final n=int.tryParse(ctl.text);if(n==null||n<v.odometer){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Enter a valid reading not below the current value.')));return;}await c.updateOdometer(v,n);if(ctx.mounted)Navigator.pop(ctx);},child:const Text('Update'))]));
 }
-Future<void> _serviceDialog(BuildContext context,FleetController c)async{
-  String vehicle=c.vehicles.first.id,type='Oil';final odo=TextEditingController(text:'${c.vehicles.first.odometer}'),cost=TextEditingController(text:'0'),garage=TextEditingController(),notes=TextEditingController();DateTime date=DateTime.now();
-  await showDialog(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,set)=>AlertDialog(title:const Text('Log service entry'),content:SizedBox(width:420,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
-    DropdownButtonFormField<String>(value:vehicle,decoration:const InputDecoration(labelText:'Vehicle'),items:c.vehicles.map((v)=>DropdownMenuItem(value:v.id,child:Text(v.plate))).toList(),onChanged:(v){if(v!=null)set(()=>vehicle=v);}),
-    DropdownButtonFormField<String>(value:type,decoration:const InputDecoration(labelText:'Service type'),items:['Oil','Tyres','Brakes','General'].map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:(v){if(v!=null)set(()=>type=v);}),
-    TextField(controller:odo,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'Odometer km')),
-    TextField(controller:cost,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'Cost (KES)')),
-    TextField(controller:garage,decoration:const InputDecoration(labelText:'Garage / supplier')),
-    TextField(controller:notes,decoration:const InputDecoration(labelText:'Notes / receipt reference')),
-    ListTile(contentPadding:EdgeInsets.zero,title:const Text('Service date'),subtitle:Text(dateText(date)),onTap:()async{final d=await showDatePicker(context:context,initialDate:date,firstDate:DateTime(2020),lastDate:DateTime.now().add(const Duration(days:1)));if(d!=null)set(()=>date=d);}),
-  ]))),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('Cancel')),FilledButton(onPressed:()async{final km=int.tryParse(odo.text),amount=double.tryParse(cost.text);if(km==null||amount==null||amount<0){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Enter a valid odometer and non-negative cost.')));return;}await c.addService(ServiceRecord(id:uid(),vehicleId:vehicle,type:type,date:date,odometer:km,cost:amount,garage:garage.text.trim(),notes:notes.text.trim()));if(ctx.mounted)Navigator.pop(ctx);},child:const Text('Save entry'))]})));)
+Future<void> _serviceDialog(BuildContext context, FleetController c) async {
+  String vehicle = c.vehicles.first.id;
+  String type = 'Oil';
+  final odometer = TextEditingController(text: '${c.vehicles.first.odometer}');
+  final cost = TextEditingController(text: '0');
+  final garage = TextEditingController();
+  final notes = TextEditingController();
+  DateTime date = DateTime.now();
+
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setDialogState) => AlertDialog(
+        title: const Text('Log service entry'),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: vehicle,
+                  decoration: const InputDecoration(labelText: 'Vehicle'),
+                  items: c.vehicles.map((item) => DropdownMenuItem(value: item.id, child: Text(item.plate))).toList(),
+                  onChanged: (value) { if (value != null) setDialogState(() => vehicle = value); },
+                ),
+                DropdownButtonFormField<String>(
+                  initialValue: type,
+                  decoration: const InputDecoration(labelText: 'Service type'),
+                  items: ['Oil', 'Tyres', 'Brakes', 'General'].map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
+                  onChanged: (value) { if (value != null) setDialogState(() => type = value); },
+                ),
+                TextField(controller: odometer, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Odometer km')),
+                TextField(controller: cost, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Cost (KES)')),
+                TextField(controller: garage, decoration: const InputDecoration(labelText: 'Garage / supplier')),
+                TextField(controller: notes, decoration: const InputDecoration(labelText: 'Notes / receipt reference')),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Service date'),
+                  subtitle: Text(dateText(date)),
+                  onTap: () async {
+                    final value = await showDatePicker(context: context, initialDate: date, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 1)));
+                    if (value != null) setDialogState(() => date = value);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () async {
+              final km = int.tryParse(odometer.text);
+              final amount = double.tryParse(cost.text);
+              if (km == null || amount == null || amount < 0) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid odometer and non-negative cost.')));
+                return;
+              }
+              await c.addService(ServiceRecord(
+                id: uid(),
+                vehicleId: vehicle,
+                type: type,
+                date: date,
+                odometer: km,
+                cost: amount,
+                garage: garage.text.trim(),
+                notes: notes.text.trim(),
+              ));
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+            },
+            child: const Text('Save entry'),
+          ),
+        ],
+      ),
+    ),
+  );
 }

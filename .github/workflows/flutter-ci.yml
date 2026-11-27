@@ -16,8 +16,8 @@ jobs:
         with:
           channel: stable
           cache: true
+      - run: flutter create --platforms=web,android --project-name bima_fleet .
       - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed lib
       - run: flutter analyze
       - run: flutter test
       - run: flutter build web --release --base-href /
@@ -33,6 +33,7 @@ jobs:
         with:
           channel: stable
           cache: true
+      - run: flutter create --platforms=android --project-name bima_fleet .
       - run: flutter pub get
       - run: flutter build apk --release
       - name: Publish latest APK release

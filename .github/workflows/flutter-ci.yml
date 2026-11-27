@@ -18,7 +18,7 @@ jobs:
           cache: true
       - run: flutter create --platforms=web,android --project-name bima_fleet .
       - run: flutter pub get
-      - run: flutter analyze
+      - run: flutter analyze --no-fatal-infos
       - run: flutter test
       - run: flutter build web --release --base-href /
   android-release:

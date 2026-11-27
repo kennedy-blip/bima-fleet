@@ -47,7 +47,6 @@ class FleetController extends ChangeNotifier {
   Future<void> setThreshold(int v) async { threshold = v; await store.setThreshold(v); notifyListeners(); }
   int get expiredCount => vehicles.where((v) => [v.insuranceExpiry,v.inspectionExpiry,v.licenseExpiry].any((d)=>v.stateFor(d,threshold:threshold)==ComplianceState.expired)).length;
   int get dueCount => vehicles.where((v) => [v.insuranceExpiry,v.inspectionExpiry,v.licenseExpiry].any((d)=>v.stateFor(d,threshold:threshold)==ComplianceState.expiringSoon)).length;
-  double get renewalEstimate => vehicles.fold(0, (sum,v) => sum + [v.insuranceExpiry,v.inspectionExpiry,v.licenseExpiry].where((d)=>v.daysUntil(d)>=0 && v.daysUntil(d)<=60).length*0.0);
 }
 
 Future<void> main() async {
@@ -116,7 +115,7 @@ class ServiceScreen extends StatelessWidget {
     else ...c.vehicles.map((v)=>_maintenanceCard(context,c,v)),
     const SizedBox(height:18),_sectionTitle('Service history'),
     if(c.services.isEmpty) _empty(context,'No service entries yet','Your service receipts and garage notes will appear here.',Icons.receipt_long)
-    else ...c.services.map((s){final v=c.vehicles.where((x)=>x.id==s.vehicleId).firstOrNull;return Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.build)),title:Text('${s.type} · ${v?.plate??'Vehicle removed'}'),subtitle:Text('${dateText(s.date)} · ${s.odometer} km · ${s.garage}'),trailing:Text(money.format(s.cost),style:const TextStyle(fontWeight:FontWeight.bold))));}),
+    else ...c.services.map((s){final matches=c.vehicles.where((x)=>x.id==s.vehicleId);final v=matches.isEmpty?null:matches.first;return Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.build)),title:Text('${s.type} · ${v?.plate??'Vehicle removed'}'),subtitle:Text('${dateText(s.date)} · ${s.odometer} km · ${s.garage}'),trailing:Text(money.format(s.cost),style:const TextStyle(fontWeight:FontWeight.bold))));}),
   ]);
 }
 
@@ -176,7 +175,6 @@ Widget _maintenanceCard(BuildContext context,FleetController c,FleetVehicle v){f
 Future<void> _vehicleDialog(BuildContext context,FleetController c,{FleetVehicle? existing})async{
   final plate=TextEditingController(text:existing?.plate??''),model=TextEditingController(text:existing?.model??''),driver=TextEditingController(text:existing?.driver??'');
   DateTime insurance=existing?.insuranceExpiry??DateTime.now().add(const Duration(days:365)),inspection=existing?.inspectionExpiry??DateTime.now().add(const Duration(days:180)),license=existing?.licenseExpiry??DateTime.now().add(const Duration(days:365));
-  DateTime? chooseDate(DateTime d)=>d;
   Future<DateTime?> pick(DateTime d) => showDatePicker(context:context,initialDate:d,firstDate:DateTime(2020),lastDate:DateTime(2045));
   await showDialog(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,set)=>AlertDialog(title:Text(existing==null?'Register vehicle':'Edit vehicle'),content:SizedBox(width:420,child:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
     TextField(controller:plate,decoration:const InputDecoration(labelText:'Registration / plate number')),
